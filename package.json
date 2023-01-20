@@ -1,0 +1,35 @@
+{
+  "name": "obyte-indexfund",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "mocha -c test/mocha.yaml --require test/bootload.js",
+    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js test/*.test.oscript.js",
+    "lint": "node ./node_modules/.bin/eslint --ext .js --max-warnings=0 test",
+    "clean": "rm -rf testdata"
+  },
+  "engines": {
+    "node": ">=8"
+  },
+  "dependencies": {
+    "aa-testkit": "git+https://github.com/valyakin/aa-testkit.git",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.32.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-chai-friendly": "^0.7.2",
+    "eslint-plugin-import": "^2.27.4",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "obyte-explorer-frontend": "git+https://github.com/byteball/obyte-explorer-frontend"
+  },
+  "resolutions": {
+    "chalk": "^3.0.0",
+    "cli-width": "^2.2.1",
+    "level-rocksdb": "^4.0.0",
+    "obyte-explorer": "git+https://github.com/byteball/obyte-explorer#aab52c07f35d60f24d94ee1ce5401832b1ed3961"
+  }
+}
