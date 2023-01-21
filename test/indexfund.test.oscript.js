@@ -10,7 +10,7 @@ describe('Index Fund', function () {
 
     const deployFund = async (params) => witness(this.network.deployer.deployAgent(
         `{
-			base_aa: "AIW6WTGL423WAPY6TYTZX7OAUDYXUD4X",
+			base_aa: "TQLH6GCJ3HRZLZDTQB2HT4DY2OPLUJHT",
 			params: ${JSON.stringify({ ...params, nonce: Date.now() })}
 		}`))
 
@@ -64,6 +64,7 @@ describe('Index Fund', function () {
     describe('Investing', () => {
 
         let fund;
+        let sharesAsset;
 
         before(async () => {
             fund = await deployFund({
@@ -82,6 +83,9 @@ describe('Index Fund', function () {
             expect(fund).to.be.deployed
             const initialization = await initializeFund(fund.address)
             expect(await responseTo(initialization)).to.be.successful
+
+            const state = await this.network.deployer.readAAStateVars(fund.address)
+            sharesAsset = state.vars['asset']
 
             const priceDataFeed = await this.network.wallet.oracle.sendMulti({
                 messages: [{
@@ -163,5 +167,40 @@ describe('Index Fund', function () {
             const investorBalance = await this.network.wallet.investor2.getBalance()
             expect(investorBalance[state.vars['asset']].pending).to.equal(0.5 * 1e8)
         })
+
+        it('investor redeems underlying assets', async () => {
+            const investorAddress = await this.network.wallet.investor1.getAddress()
+
+            const payment = await this.network.wallet.investor1.sendMulti({
+                change_address: investorAddress,
+                asset: sharesAsset,
+                asset_outputs: [{
+                    address: fund.address,
+                    amount: 0.3 * 1e8,
+                }],
+                base_outputs: [{
+                    address: fund.address,
+                    amount: 10000,
+                }],
+                messages: [{
+                    app: 'data',
+                    payload: {
+                        intent: 'redeem'
+                    }
+                }]
+            })
+
+            expect(payment.error).to.be.null
+
+            const response = await responseTo(payment)
+            expect(response).to.be.successful
+
+            const state = await this.network.wallet.investor1.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(1.2 * 1e8)
+
+            const investorBalance = await this.network.wallet.investor1.getBalance()
+            expect(investorBalance[this.network.asset.btc].pending).to.equal(3)
+        })
+
     })
 })

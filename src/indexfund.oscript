@@ -97,6 +97,40 @@
 				]
 			},
 			{
+				if: "{ trigger.data.intent == 'redeem' }",
+				init: `{
+					$shares_returned = trigger.output[[asset=$asset]];
+					require($shares_returned > 0, "No shares returned");
+
+					$share = $shares_returned / $total_shares;
+					$amounts = [];
+					foreach(params.portfolio, $PORTFOLIO_SIZE, ($portfolio_spec) => {
+						$amounts[$portfolio_spec.asset] = floor($_get_asset_balance($portfolio_spec) * $share);
+					});
+				}`,
+				messages: [{
+					app: "payment",
+					payload: {
+						asset: "{params.portfolio[0].asset}",
+						outputs: [{ address: "{trigger.address}", amount: "{$amounts[params.portfolio[0].asset]}"}]
+					}
+				},
+				{
+					app: "payment",
+					payload: {
+						asset: "{params.portfolio[1].asset}",
+						outputs: [{ address: "{trigger.address}", amount: "{$amounts[params.portfolio[1].asset]}"}]
+					}
+				},
+				{
+					app: "state",
+					state: `{
+						var['total_shares'] -= $shares_returned;
+						response['message'] = 'Redeemed';
+					}`
+				}]
+			},
+			{
 				init: `{ bounce('Bad request'); }`,
 				messages: [{app: "state", state: '{}'}]
 			}
