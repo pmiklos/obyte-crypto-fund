@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "mocha -c test/mocha.yaml --require test/bootload.js",
-    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js test/*.test.oscript.js",
+    "test": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js",
+    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js test/*.test.oscript.js",
     "lint": "node ./node_modules/.bin/eslint --ext .js --max-warnings=0 test",
     "clean": "rm -rf testdata"
   },

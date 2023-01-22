@@ -11,7 +11,7 @@ describe('Index Fund', function () {
     const deployFund = async (params) => witness(this.network.deployer.deployAgent(
         `{
 			base_aa: "TQLH6GCJ3HRZLZDTQB2HT4DY2OPLUJHT",
-			params: ${JSON.stringify({ ...params, nonce: Date.now() })}
+			params: ${JSON.stringify({...params, nonce: Date.now()})}
 		}`))
 
     const initializeFund = async (fund) => witness(this.network.deployer.sendBytes({
@@ -19,13 +19,16 @@ describe('Index Fund', function () {
         amount: 10000
     }))
 
+    const alice = (title, assertions) => it('Alice ' + title, async () => await assertions(this.network.wallet.alice))
+    const bob = (title, assertions) => it('Bob ' + title, async () => await assertions(this.network.wallet.bob))
+
     before(async () => {
         this.network = await Network.create().with
             .agent({indexfund: path.join(__dirname, INDEXFUND_AA_PATH)})
             .asset({btc: {cap: 1000}})
             .asset({eth: {cap: 1000}})
-            .wallet({investor1: {base: 1e6, btc: 100, eth: 100}})
-            .wallet({investor2: {base: 1e6, btc: 100, eth: 100}})
+            .wallet({alice: {base: 1e6, btc: 100, eth: 100}})
+            .wallet({bob: {base: 1e6, btc: 100, eth: 100}})
             .wallet({oracle: 1e6})
             .explorer({
                 port: 6680
@@ -91,8 +94,8 @@ describe('Index Fund', function () {
                 messages: [{
                     app: 'data_feed',
                     payload: {
-                        BTC_USD: '20909.0',
-                        ETH_USD: '1536.03'
+                        BTC_USD: '10000.0',
+                        ETH_USD: '1000.0'
                     }
                 }]
             })
@@ -100,106 +103,92 @@ describe('Index Fund', function () {
             await witness(priceDataFeed)
         })
 
-        it('first investor buys shares', async () => {
-            const investorAddress = await this.network.wallet.investor1.getAddress()
-
-            const payment = await this.network.wallet.investor1.sendMulti({
-                change_address: investorAddress,
+        alice('invests 10 BTC for 1 share', async (wallet) => {
+            const investment = await wallet.invest({
                 asset: this.network.asset.btc,
-                asset_outputs: [{
-                    address: fund.address,
-                    amount: 10,
-                }],
-                base_outputs: [{
-                    address: fund.address,
-                    amount: 10000,
-                }],
-                messages: [{
-                    app: 'data',
-                    payload: {
-                        intent: 'invest'
-                    }
-                }]
+                address: fund.address,
+                amount: 10,
             })
 
-            expect(payment.error).to.be.null
+            expect(investment.error).to.be.null
+            expect(await responseTo(investment)).to.be.successful
 
-            const response = await responseTo(payment)
-            expect(response).to.be.successful
-
-            const state = await this.network.wallet.investor1.readAAStateVars(fund.address)
+            const state = await wallet.readAAStateVars(fund.address)
             expect(state.vars['total_shares']).to.equal(1e8)
 
-            const investorBalance = await this.network.wallet.investor1.getBalance()
-            expect(investorBalance[state.vars['asset']].pending).to.equal(1e8)
+            const balance = await wallet.getBalance()
+            expect(balance[state.vars['asset']].pending).to.equal(1e8)
         })
 
-        it('next investor buys shares', async () => {
-            const investorAddress = await this.network.wallet.investor2.getAddress()
-
-            const payment = await this.network.wallet.investor2.sendMulti({
-                change_address: investorAddress,
-                asset: this.network.asset.btc,
-                asset_outputs: [{
-                    address: fund.address,
-                    amount: 5,
-                }],
-                base_outputs: [{
-                    address: fund.address,
-                    amount: 10000,
-                }],
-                messages: [{
-                    app: 'data',
-                    payload: {
-                        intent: 'invest'
-                    }
-                }]
+        bob('invests 50 ETH for 0.5 shares', async (wallet) => {
+            const investment = await wallet.invest({
+                asset: this.network.asset.eth,
+                address: fund.address,
+                amount: 50,
             })
 
-            expect(payment.error).to.be.null
+            expect(investment.error).to.be.null
+            expect(await responseTo(investment)).to.be.successful
 
-            const response = await responseTo(payment)
-            expect(response).to.be.successful
-
-            const state = await this.network.wallet.investor2.readAAStateVars(fund.address)
+            const state = await wallet.readAAStateVars(fund.address)
             expect(state.vars['total_shares']).to.equal(1.5 * 1e8)
 
-            const investorBalance = await this.network.wallet.investor2.getBalance()
-            expect(investorBalance[state.vars['asset']].pending).to.equal(0.5 * 1e8)
+            const balance = await wallet.getBalance()
+            expect(balance[state.vars['asset']].pending).to.equal(0.5 * 1e8)
         })
 
-        it('investor redeems underlying assets', async () => {
-            const investorAddress = await this.network.wallet.investor1.getAddress()
-
-            const payment = await this.network.wallet.investor1.sendMulti({
-                change_address: investorAddress,
+        alice('redeems 0.3 shares for 2 BTC and 10 ETH', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
                 asset: sharesAsset,
-                asset_outputs: [{
-                    address: fund.address,
-                    amount: 0.3 * 1e8,
-                }],
-                base_outputs: [{
-                    address: fund.address,
-                    amount: 10000,
-                }],
-                messages: [{
-                    app: 'data',
-                    payload: {
-                        intent: 'redeem'
-                    }
-                }]
+                amount: 0.3 * 1e8
             })
 
-            expect(payment.error).to.be.null
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.successful
 
-            const response = await responseTo(payment)
-            expect(response).to.be.successful
-
-            const state = await this.network.wallet.investor1.readAAStateVars(fund.address)
+            const state = await wallet.readAAStateVars(fund.address)
             expect(state.vars['total_shares']).to.equal(1.2 * 1e8)
 
-            const investorBalance = await this.network.wallet.investor1.getBalance()
-            expect(investorBalance[this.network.asset.btc].pending).to.equal(3)
+            const balance = await wallet.getBalance()
+            expect(balance[this.network.asset.btc].pending).to.equal(2)
+            expect(balance[this.network.asset.eth].pending).to.equal(10)
+        })
+
+        bob('redeems all of his shares for 3 BTC and 16 ETH', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
+                asset: sharesAsset,
+                amount: 0.5 * 1e8
+            })
+
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.successful
+
+            const state = await wallet.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(0.7 * 1e8)
+
+            const balance = await wallet.getBalance()
+            expect(balance[this.network.asset.btc].pending).to.equal(3)
+            expect(balance[this.network.asset.eth].pending).to.equal(16)
+        })
+
+        alice('redeems the rest of her shares for 5 BTC and 24 ETH', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
+                asset: sharesAsset,
+                amount: 0.7 * 1e8
+            })
+
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.successful
+
+            const state = await wallet.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(0)
+
+            const balance = await wallet.getBalance()
+            expect(balance[this.network.asset.btc].pending).to.equal(5)
+            expect(balance[this.network.asset.eth].pending).to.equal(24)
         })
 
     })
