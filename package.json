@@ -1,10 +1,13 @@
 {
-  "name": "obyte-indexfund",
+  "name": "obyte-crypto-fund",
   "version": "0.1.0",
+  "description": "Decentralized Cryptocurrency Fund",
+  "keywords": ["index fund", "etf", "smart contract", "autonomous agent", "obyte"],
+  "license": "MIT",
   "private": true,
   "scripts": {
     "test": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js",
-    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js test/*.test.oscript.js",
+    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js test/*.test.js",
     "lint": "node ./node_modules/.bin/eslint --ext .js --max-warnings=0 test",
     "clean": "rm -rf testdata"
   },
@@ -23,8 +26,7 @@
     "eslint-plugin-import": "^2.27.4",
     "eslint-plugin-mocha": "^10.1.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^6.1.1",
-    "obyte-explorer-frontend": "git+https://github.com/byteball/obyte-explorer-frontend"
+    "eslint-plugin-promise": "^6.1.1"
   },
   "resolutions": {
     "chalk": "^3.0.0",

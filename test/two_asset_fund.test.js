@@ -1,6 +1,6 @@
 const path = require('path')
 
-const INDEXFUND_AA_PATH = '../src/indexfund.oscript'
+const INDEXFUND_AA_PATH = '../src/two_asset_fund.oscript'
 
 describe('Index Fund', function () {
     this.timeout(120000)
