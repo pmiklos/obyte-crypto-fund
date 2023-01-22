@@ -10,7 +10,10 @@ For example one can set up a fund that tracks a basket of BTC and ETH while othe
 
 An investor can purchase shares by sending one or more managed assets to the fund.
 The circulating supply of shares represent the total value held by the fund and can be traded on secondary exchanges.
-Investor can always redeem the underlying assets from the fund in the same value of their shares.
+Investors can always redeem the underlying assets from the fund in the same value of their shares and in the same proportion the managed assets are allocated in the fund. 
+
+Important to note that the fund is managed by the community as whole. There is no fund manager with privileged role.
+Investors can add and remove assets from the fund whenever they feel doing so.
 
 ## Testing
 
