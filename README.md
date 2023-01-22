@@ -8,7 +8,7 @@ Obyte and added to the fund creating a true cross-chain decentralized cryptocurr
 
 Install project dependencies
 ```bash
-yarn install
+yarn
 ```
 
 Run all tests
