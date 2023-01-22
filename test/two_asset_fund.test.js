@@ -30,12 +30,13 @@ describe('Index Fund', function () {
             .wallet({alice: {base: 1e6, btc: 100, eth: 100}})
             .wallet({bob: {base: 1e6, btc: 100, eth: 100}})
             .wallet({oracle: 1e6})
-            .explorer({
-                port: 6680
-            })
             .run()
 
         expect(this.network.agent.indexfund).to.be.validAddress
+    })
+
+    after(async () => {
+        await this.network.stop()
     })
 
     describe('Initialization', () => {
