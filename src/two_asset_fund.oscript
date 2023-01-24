@@ -15,13 +15,15 @@
 			return $price;
 		};
 
-		$_calculate_asset_value = ($portfolio_spec) => {
-			return $_get_asset_balance($portfolio_spec) * $_get_asset_price($portfolio_spec);
+		$_calculate_asset_value = ($portfolio_spec, $amount) => {
+			$amount_in_major_units = $amount / 10^$portfolio_spec.decimals;
+			return $amount_in_major_units * $_get_asset_price($portfolio_spec);
 		};
 
 		$calculate_portfolio_value = () => {
 			return reduce(params.portfolio, $PORTFOLIO_SIZE, ($sum, $portfolio_spec) => {
-				return $sum + $_calculate_asset_value($portfolio_spec);
+				$balance = $_get_asset_balance($portfolio_spec);
+				return $sum + $_calculate_asset_value($portfolio_spec, $balance);
 			}, 0);
 		};
 	}`,
@@ -60,12 +62,11 @@
 				init: `{
 					$investment_value = reduce(params.portfolio, $PORTFOLIO_SIZE, ($sum, $portfolio_spec) => {
 						$amount = trigger.outputs[$portfolio_spec.asset] OTHERWISE 0;
-						$price = $_get_asset_price($portfolio_spec);
-						$value = $amount * $price;
+						$value = $_calculate_asset_value($portfolio_spec, $amount);
 						return $sum + $value;
 					}, 0);
 					require($investment_value > 0, "No positive investment value");
-					$shares = $investment_value * $ASSET_DECIMALS_MULTIPLIER;
+					$shares = floor($investment_value * $ASSET_DECIMALS_MULTIPLIER);
 					require($shares > 0, "Investment value too small");
 					require(is_valid_amount($total_shares + $shares), "Investment value too high");
 				}`,

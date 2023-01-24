@@ -38,9 +38,11 @@ Once the abstract base agent is deployed, a concrete agent can be configured wit
 	"params": {
 		"portfolio": [{
 			"asset": "fSwaCprr3OSNHXTLDtOK3lflKEKvQi7ypWQSh1FfK1E=",
+			"decimals": 8,
 			"feed": "BTC_USD"
 		}, {
 			"asset": "3aw7r8dm0C/TG3w2CQGyCc8ukbMpeHJ/SXgbej/WXz8=",
+			"decimals": 6,
 			"feed": "ETH_USD"
 		}],
 		"oracle": "BAYMZX2FORMWKJ7QWP54HP37GJGL2OAG"
