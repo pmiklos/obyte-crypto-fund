@@ -68,15 +68,19 @@
 					require($investment_value > 0, "No positive investment value");
 
 					// portfolio value already includes this investment since it is immediately added to the AA balance
-					$portfolio_value = $calculate_portfolio_value();
+					$new_portfolio_value = $calculate_portfolio_value();
+					$old_portfolio_value = $new_portfolio_value - $investment_value;
 
-					require($portfolio_value > 0, 'No positive portfolio value');
+					require($old_portfolio_value >= 0, 'Negative portfolio value');
 
-					if ($investment_value == $portfolio_value) {
+					if ($old_portfolio_value == 0) {
 						$shares = $investment_value * $ASSET_DECIMALS_MULTIPLIER;
 					} else {
-						$shares = floor($total_shares * $investment_value / ($portfolio_value - $investment_value));
+						$shares = floor($total_shares * $investment_value / $old_portfolio_value);
 					}
+
+					require($shares > 0, "Too little investment value");
+					require(is_valid_amount($total_shares + $shares), "Too large investment value");
 				}`,
 				messages: [
 					{
