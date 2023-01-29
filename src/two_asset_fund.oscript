@@ -66,9 +66,17 @@
 						return $sum + $value;
 					}, 0);
 					require($investment_value > 0, "No positive investment value");
-					$shares = floor($investment_value * $ASSET_DECIMALS_MULTIPLIER);
-					require($shares > 0, "Investment value too small");
-					require(is_valid_amount($total_shares + $shares), "Investment value too high");
+
+					// portfolio value already includes this investment since it is immediately added to the AA balance
+					$portfolio_value = $calculate_portfolio_value();
+
+					require($portfolio_value > 0, 'No positive portfolio value');
+
+					if ($investment_value == $portfolio_value) {
+						$shares = $investment_value * $ASSET_DECIMALS_MULTIPLIER;
+					} else {
+						$shares = floor($total_shares * $investment_value / ($portfolio_value - $investment_value));
+					}
 				}`,
 				messages: [
 					{

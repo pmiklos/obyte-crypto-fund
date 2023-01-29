@@ -13,7 +13,7 @@ describe('Index Fund', function () {
 
     const deployFund = async (params) => witness(this.network.deployer.deployAgent(
         `{
-            base_aa: "BXJUEHJDTH6JAYSWAIVWOEQKTSMMVRAV",
+            base_aa: "TUWQTY2FEFVQCMSEENG7T6ZK3KQRNC2T",
             params: ${JSON.stringify({...params, nonce: Date.now()})}
         }`))
 
