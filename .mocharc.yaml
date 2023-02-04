@@ -1,0 +1,6 @@
+bail: true
+exit: true
+slow: 20000
+require:
+  - 'testFixtures/bootload.js'
+  - 'testFixtures/indexfund.js'

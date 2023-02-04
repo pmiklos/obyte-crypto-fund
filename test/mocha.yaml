@@ -1,5 +1,0 @@
-bail: true
-exit: true
-slow: 20000
-require:
-	- 'test/bootload.js'

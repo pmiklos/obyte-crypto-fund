@@ -6,8 +6,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "test": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js",
-    "test:all": "mocha -c test/mocha.yaml --require test/bootload.js --require test/indexfund.js test/*.test.js",
+    "test": "mocha",
+    "test:all": "mocha test/*.test.js",
     "lint": "node ./node_modules/.bin/eslint --ext .js --max-warnings=0 test",
     "clean": "rm -rf testdata"
   },
