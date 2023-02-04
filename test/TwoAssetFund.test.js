@@ -1,6 +1,6 @@
 const path = require('path')
 
-const INDEXFUND_AA_PATH = '../src/two_asset_fund.oscript'
+const INDEXFUND_AA_PATH = '../src/TwoAssetFund.oscript'
 const SHARE_DECIMALS = 1e6
 const BTC_DECIMALS = 1e8
 const ETH_DECIMALS = 1e6
