@@ -2,7 +2,6 @@
 	bounce_fees: { base: 10000 },
 	init: `{
 		$PORTFOLIO_SIZE = 2;
-		$ASSET_DECIMALS_MULTIPLIER = 1e6;
 
 		$asset = var['asset'];
 		$total_shares = var['total_shares'] OTHERWISE 0;
@@ -41,30 +40,18 @@
 						return $sum + $amount;
 					}, 0);
 
-					require($total_received_amount > 0, "No portfolio assets received");
+					$shares = $total_received_amount;
 
-					$shares = floor(reduce(params.portfolio, $PORTFOLIO_SIZE, ($avg, $index, $portfolio_spec) => {
+					require($shares > 0, "No portfolio assets received");
+					require(is_valid_amount($total_shares + $shares), "Too many asset coins received");
+
+					foreach(params.portfolio, $PORTFOLIO_SIZE, ($portfolio_spec) => {
 						$received_amount = trigger.outputs[$portfolio_spec.asset] OTHERWISE 0;
 						$expected_amount = round($total_received_amount * $portfolio_spec.percentage);
 
-						require($expected_amount > 0, "Too few assets received");
+						require($expected_amount > 0, "Not enough coins of " || $portfolio_spec.asset);
 						require($received_amount == $expected_amount, "Expected " || $expected_amount || " of " || $portfolio_spec.asset);
-
-						// asset balance already includes the received assets
-						$old_balance = balance[$portfolio_spec.asset] - $received_amount;
-						require($old_balance >= 0, "Negative asset balance, unexpected");
-
-						if ($old_balance == 0) {
-							$shares = 1 * $ASSET_DECIMALS_MULTIPLIER;
-						} else {
-							$shares = $total_shares * ($received_amount / $old_balance);
-						}
-
-						return ($avg * $index + $shares) / ($index + 1);
-					}, 0));
-
-					require($shares > 0, "Share of received assets is too little");
-					require(is_valid_amount($total_shares + $shares), "Share of received assets is to large");
+					});
 				}`,
 				messages: [
 					{
