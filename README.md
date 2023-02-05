@@ -1,20 +1,19 @@
 ![build status](https://github.com/pmiklos/obyte-crypto-fund/actions/workflows/build.yml/badge.svg)
 # Decentralized Cryptocurrency Fund
 
-A collection of Obyte Autonomous Agents that manage baskets of assets issued on the Obyte distributed ledger.
-Thanks to the [Counterstake](https://counterstake.org) cross-chain bridge, assets from other chains can be imported to
-Obyte and added to the fund creating a true cross-chain decentralized cryptocurrency fund.
+The Obyte Autonomous Agent Fund is a collection of agents that manage portfolios of assets on the Obyte distributed ledger.
+These funds are able to incorporate assets from other chains, thanks to the [Counterstake](https://counterstake.org) cross-chain bridge,
+making them truly cross-chain decentralized cryptocurrency funds.
 
-The Fund agents are abstract base agents meaning after deployment various funds can be derived from it with different parameters.
-For example one can set up a fund that tracks a basket of BTC and ETH while others may track MATIC and BNB.
+These autonomous agents are abstract and must be deployed with custom parameters to track various baskets of assets, such as BTC and ETH or MATIC and BNB.
+The funds work similarly, anyone can purchase shares in the fund by contributing one or more of the managed assets.
+The number of shares issued is proportional to the value of the assets contributed and the assets held in the fund.
 
-Anyone can purchase shares by sending one or more managed assets to the fund.
-The shares issued by the fund is proportionate to the contributed assets and the assets held by the fund.
-The circulating supply of shares represent the total value held by the fund and can be traded on secondary exchanges.
-Shareholders can always redeem the underlying assets from the fund, in exchange for the shares, in the same ratio the managed assets are allocated in the fund. 
+The circulating supply of shares represents the total value of the fund and can be traded on secondary exchanges.
+Shareholders have the option to redeem their shares for the underlying assets in the same ratio as the assets are allocated in the fund.
 
-Important to note that the fund is managed by the community as whole with no particular fund manager.
-Anyone can add and remove assets from the fund whenever they feel doing so.
+It is important to note that the fund is managed by the community as a whole and does not have a specific fund manager.
+Members of the community have the ability to add and remove assets from the fund at their discretion.
 
 ## Testing
 
@@ -43,6 +42,16 @@ This may present a challenge for some, as they would need to acquire all assets 
 
 For the success of this type of fund, it requires active participation from the community, who can issue shares for resale on secondary markets through contributing to the fund.
 This may be driven by the desire to take advantage of arbitrage opportunities or even earn a fee for selling shares.
+
+### Dynamic Allocation Fund
+
+Dynamic Allocation Funds are distinct from Fixed Allocation Funds in that the ratio of assets in the portfolio is influenced by external factors such as a price oracle or a market capitalization oracle.
+The fund enables the issuance of shares by accepting contributions in one or multiple managed assets in any ratio.
+The number of newly issued shares is then calculated based on the value of those assets expressed in a common currency, such as USD.
+
+This fund offers greater flexibility to the community as new shares can be acquired by contributing any of the assets under management.
+However, it also introduces additional risks associated with reliance on external oracles, which can be susceptible to manipulation.
+In addition, the fund requires active participation from the community to periodically rebalance the portfolio to align with the desired allocation ratio.
 
 ## Usage
 
@@ -101,8 +110,8 @@ Once the abstract base agent is deployed, a concrete agent can be configured wit
 }]
 ```
 
-The `portfolio` describes the basket of assets under management. Note, that the number of assets must match the max number of assets declared by the base agent.
-Each portfolio entry defines the Obyte asset hash and the name of the data fee the `oracle` publishes exchange rate information.
-
-Each price feed must be quoted in the same currency otherwise calculating the investment and portfolio values would make no sense.
-In the example above, both BTC and ETH are quoted in USD and so the portfolio value is expressed in USD as well.
+The `portfolio` refers to the collection of assets that are being managed.
+It is important to ensure that the number of assets in the portfolio matches the maximum number specified by the base agent.
+Each entry in the portfolio consists of the Obyte asset hash and the data fee name, which is used by the oracle to publish exchange rate information.
+It is crucial that all price feeds are quoted in the same currency, as this allows for consistent calculation of investment and portfolio values.
+In the example provided, both BTC and ETH are quoted in USD, resulting in the portfolio value being expressed in USD.
