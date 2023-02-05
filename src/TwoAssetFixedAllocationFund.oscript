@@ -1,0 +1,128 @@
+{
+	bounce_fees: { base: 10000 },
+	init: `{
+		$PORTFOLIO_SIZE = 2;
+		$ASSET_DECIMALS_MULTIPLIER = 1e6;
+
+		$asset = var['asset'];
+		$total_shares = var['total_shares'] OTHERWISE 0;
+	}`,
+	messages: {
+		cases: [
+			{
+				if: "{ !$asset }",
+				messages: [
+					{
+						app: "asset",
+						payload: {
+							is_private: false,
+							is_transferrable: true,
+							auto_destroy: false,
+							fixed_denominations: false,
+							issued_by_definer_only: true,
+							cosigned_by_definer: false,
+							spender_attested: false
+						}
+					},
+					{
+						app: "state",
+						state: `{
+							var['asset'] = response_unit;
+							response['message'] = 'Initialized';
+						}`
+					}
+				]
+			},
+			{
+				if: "{ trigger.data.intent == 'issue' }",
+				init: `{
+					$total_received_amount = reduce(params.portfolio, $PORTFOLIO_SIZE, ($sum, $portfolio_spec) => {
+						$amount = trigger.outputs[$portfolio_spec.asset] OTHERWISE 0;
+						return $sum + $amount;
+					}, 0);
+
+					require($total_received_amount > 0, "No portfolio assets received");
+
+					$shares = floor(reduce(params.portfolio, $PORTFOLIO_SIZE, ($avg, $index, $portfolio_spec) => {
+						$received_amount = trigger.outputs[$portfolio_spec.asset] OTHERWISE 0;
+						$expected_amount = round($total_received_amount * $portfolio_spec.percentage);
+
+						require($expected_amount > 0, "Too few assets received");
+						require($received_amount == $expected_amount, "Expected " || $expected_amount || " of " || $portfolio_spec.asset);
+
+						// asset balance already includes the received assets
+						$old_balance = balance[$portfolio_spec.asset] - $received_amount;
+						require($old_balance >= 0, "Negative asset balance, unexpected");
+
+						if ($old_balance == 0) {
+							$shares = 1 * $ASSET_DECIMALS_MULTIPLIER;
+						} else {
+							$shares = $total_shares * ($received_amount / $old_balance);
+						}
+
+						return ($avg * $index + $shares) / ($index + 1);
+					}, 0));
+
+					require($shares > 0, "Share of received assets is too little");
+					require(is_valid_amount($total_shares + $shares), "Share of received assets is to large");
+				}`,
+				messages: [
+					{
+						app: "payment",
+						payload: {
+							asset: "{$asset}",
+							outputs: [{ address: "{trigger.address}", amount: "{$shares}"}]
+						}
+					},
+					{
+						app: "state",
+						state : `{
+							var['total_shares'] += $shares;
+							response['message'] = 'Shares Issued';
+							response['shares'] = $shares;
+						}`
+					}
+				]
+			},
+			{
+				if: "{ trigger.data.intent == 'redeem' }",
+				init: `{
+					$shares_returned = trigger.output[[asset=$asset]];
+					require($shares_returned > 0, "No shares returned");
+
+					$share = $shares_returned / $total_shares;
+					$amounts = [];
+					foreach(params.portfolio, $PORTFOLIO_SIZE, ($portfolio_spec) => {
+						$amounts[$portfolio_spec.asset] = floor(balance[$portfolio_spec.asset] * $share);
+					});
+				}`,
+				messages: [{
+					app: "payment",
+					payload: {
+						asset: "{params.portfolio[0].asset}",
+						outputs: [{ address: "{trigger.address}", amount: "{$amounts[params.portfolio[0].asset]}"}]
+					}
+				},
+				{
+					app: "payment",
+					payload: {
+						asset: "{params.portfolio[1].asset}",
+						outputs: [{ address: "{trigger.address}", amount: "{$amounts[params.portfolio[1].asset]}"}]
+					}
+				},
+				{
+					app: "state",
+					state: `{
+						var['total_shares'] -= $shares_returned;
+						response['message'] = 'Assets Redeemed';
+						response['shares'] = $shares_returned;
+					}`
+				}]
+			},
+			{
+				init: `{ bounce('Bad request'); }`,
+				messages: [{app: "state", state: '{}'}]
+			}
+		]
+	}
+}
