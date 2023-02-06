@@ -3,4 +3,5 @@ exit: true
 slow: 20000
 require:
   - 'testFixtures/Bootload.js'
+  - 'testFixtures/IndexFund.js'
   - 'testFixtures/FixedAllocationFund.js'
