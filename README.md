@@ -43,16 +43,6 @@ This may present a challenge for some, as they would need to acquire all assets 
 For the success of this type of fund, it requires active participation from the community, who can issue shares for resale on secondary markets through contributing to the fund.
 This may be driven by the desire to take advantage of arbitrage opportunities or even earn a fee for selling shares.
 
-### Dynamic Allocation Fund
-
-Dynamic Allocation Funds are distinct from Fixed Allocation Funds in that the ratio of assets in the portfolio is influenced by external factors such as a price oracle or a market capitalization oracle.
-The fund enables the issuance of shares by accepting contributions in one or multiple managed assets in any ratio.
-The number of newly issued shares is then calculated based on the value of those assets expressed in a common currency, such as USD.
-
-This fund offers greater flexibility to the community as new shares can be acquired by contributing any of the assets under management.
-However, it also introduces additional risks associated with reliance on external oracles, which can be susceptible to manipulation.
-In addition, the fund requires active participation from the community to periodically rebalance the portfolio to align with the desired allocation ratio.
-
 ## Usage
 
 ### Deploying fixed allocation funds
@@ -88,30 +78,3 @@ To maintain the ratio in the fund, the respective percentages would be calculate
 
 * 2,100,000,000,000,000 / (2,100,000,000,000,000 + 122,000,000,000,000) = 0.9450945095 for BTC
 * 122,000,000,000,000,000 / (2,100,000,000,000,000 + 122,000,000,000,000) = 0.0549054905 for ETH
-
-### Deploying dynamic allocation funds
-
-Once the abstract base agent is deployed, a concrete agent can be configured with the following parameters:
-```json
-["autonomous agent", {
-	"base_aa": "FB25TWXCDEKSZMCIZ3HIFORPV5ZHD4CC",
-	"params": {
-		"portfolio": [{
-			"asset": "fSwaCprr3OSNHXTLDtOK3lflKEKvQi7ypWQSh1FfK1E=",
-			"decimals": 8,
-			"feed": "BTC_USD"
-		}, {
-			"asset": "3aw7r8dm0C/TG3w2CQGyCc8ukbMpeHJ/SXgbej/WXz8=",
-			"decimals": 6,
-			"feed": "ETH_USD"
-		}],
-		"oracle": "BAYMZX2FORMWKJ7QWP54HP37GJGL2OAG"
-	}
-}]
-```
-
-The `portfolio` refers to the collection of assets that are being managed.
-It is important to ensure that the number of assets in the portfolio matches the maximum number specified by the base agent.
-Each entry in the portfolio consists of the Obyte asset hash and the data fee name, which is used by the oracle to publish exchange rate information.
-It is crucial that all price feeds are quoted in the same currency, as this allows for consistent calculation of investment and portfolio values.
-In the example provided, both BTC and ETH are quoted in USD, resulting in the portfolio value being expressed in USD.
