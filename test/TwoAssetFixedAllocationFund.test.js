@@ -75,11 +75,11 @@ describe('Two Asset Fixed Allocation Fund', function () {
                 portfolio: [
                     {
                         asset: this.network.asset.btc,
-                        percentage: 21_000_000 * BTC_DECIMALS / ( 21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                        percentage: 21_000_000 * BTC_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
                     },
                     {
                         asset: this.network.asset.eth,
-                        percentage: 119_000_000 * ETH_DECIMALS / ( 21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                        percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
                     }
                 ]
             });
@@ -183,5 +183,91 @@ describe('Two Asset Fixed Allocation Fund', function () {
             expect(balance[this.network.asset.eth].pending).to.equal(68_000000)
         })
 
+    })
+
+    describe('Assets should be fully redeemable', () => {
+
+        let fund;
+        let sharesAsset;
+
+        before(async () => {
+            fund = await deployFund({
+                portfolio: [
+                    {
+                        asset: this.network.asset.btc,
+                        percentage: 21_000_000 * BTC_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                    },
+                    {
+                        asset: this.network.asset.eth,
+                        percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                    }
+                ]
+            });
+            expect(fund).to.be.deployed
+            const initialization = await initializeFund(fund.address)
+            expect(await responseTo(initialization)).to.be.successful
+
+            const state = await this.network.deployer.readAAStateVars(fund.address)
+            sharesAsset = state.vars['asset']
+        })
+
+        alice('issues shares for 15 BTC and 85 ETH', async (wallet) => {
+            const issuance = await wallet.issue({
+                address: fund.address,
+                outputs: {
+                    [this.network.asset.btc]: 15 * BTC_DECIMALS,
+                    [this.network.asset.eth]: 85 * ETH_DECIMALS
+                }
+            })
+
+            expect(issuance.error).to.be.null
+            const issuanceResponse = await responseTo(issuance)
+            expect(issuanceResponse).to.be.successful
+
+            const state = await wallet.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(1585000000)
+
+            const balance = await wallet.getBalance()
+            expect(balance[state.vars['asset']].pending).to.equal(1585000000)
+
+            await this.network.witnessUntilStable(issuanceResponse.response_unit)
+        })
+
+        alice('burns all but 1 share', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
+                asset: sharesAsset,
+                amount: 1585000000 - 1
+            })
+
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.successful
+
+            const state = await wallet.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(1)
+
+            const balance = await wallet.getBalance()
+            expect(balance[this.network.asset.btc].pending).to.equal(14_99999999)
+            expect(balance[this.network.asset.eth].pending).to.equal(84_999999)
+        })
+
+
+        alice('burns last share', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
+                asset: sharesAsset,
+                amount: 1
+            })
+
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.successful
+
+            const state = await wallet.readAAStateVars(fund.address)
+            expect(state.vars['total_shares']).to.equal(0)
+
+            const balance = await wallet.getBalance()
+            expect(balance[this.network.asset.btc].pending).to.equal(1)
+            expect(balance[this.network.asset.eth].pending).to.equal(1)
+        })
     })
 })
