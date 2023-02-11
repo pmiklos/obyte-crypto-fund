@@ -1,6 +1,30 @@
 const {HeadlessWallet} = require("aa-testkit/src/nodes");
 
 /**
+ * @param {string} baseAgent the address of the abstract base agent to extend
+ * @param {Object} params the constructor parameters for the new fund instance
+ * @returns {Promise<*>}
+ */
+HeadlessWallet.prototype.deployFund = async function (baseAgent, params) {
+    return this.deployAgent(
+        `{
+            base_aa: "${baseAgent}",
+            params: ${JSON.stringify({...params, nonce: Date.now()})}
+        }`)
+}
+
+/**
+ * @param {string} fundAddress the address of the fund instance to initialize
+ * @returns {Promise<*>}
+ */
+HeadlessWallet.prototype.initializeFund = async function(fundAddress) {
+    return this.sendBytes({
+        toAddress: fundAddress,
+        amount: 10000
+    })
+}
+
+/**
  * @typedef {Object<string, number>} AssetOutputs
  */
 

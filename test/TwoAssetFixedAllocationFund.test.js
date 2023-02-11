@@ -10,30 +10,21 @@ describe('Two Asset Fixed Allocation Fund', function () {
     const responseTo = async (trigger) => this.respondTo(trigger)
     const witness = async (witnessable) => this.witness(witnessable)
 
-    const deployFund = async (params) => witness(this.network.deployer.deployAgent(
-        `{
-            base_aa: "YSOBOFK4AVXHYV2GC7MVZMOYCNKP52TX",
-            params: ${JSON.stringify({...params, nonce: Date.now()})}
-        }`))
-
-    const initializeFund = async (fund) => witness(this.network.deployer.sendBytes({
-        toAddress: fund,
-        amount: 10000
-    }))
-
+    const deployer = (title, assertions) => it('Deployer ' + title, async () => await assertions(this.network.deployer))
     const alice = (title, assertions) => it('Alice ' + title, async () => await assertions(this.network.wallet.alice))
     const bob = (title, assertions) => it('Bob ' + title, async () => await assertions(this.network.wallet.bob))
 
     before(async () => {
         this.network = await Network.create().with
-            .agent({indexfund: path.join(__dirname, INDEXFUND_AA_PATH)})
+            .agent({baseFund: path.join(__dirname, INDEXFUND_AA_PATH)})
             .asset({btc: {cap: 1_000 * BTC_DECIMALS}})
             .asset({eth: {cap: 1_000 * ETH_DECIMALS}})
             .wallet({alice: {base: 1e6, btc: 500 * BTC_DECIMALS, eth: 500 * ETH_DECIMALS}})
             .wallet({bob: {base: 1e6, btc: 500 * BTC_DECIMALS, eth: 500 * ETH_DECIMALS}})
             .run()
 
-        expect(this.network.agent.indexfund).to.be.validAddress
+        expect(this.network.agent.baseFund).to.be.validAddress
+        this.baseFund = this.network.agent.baseFund
     })
 
     after(async () => {
@@ -42,8 +33,10 @@ describe('Two Asset Fixed Allocation Fund', function () {
 
     describe('Initialization', () => {
 
-        it('initializes new fund', async () => {
-            const fund = await deployFund({
+        let fund
+
+        deployer('deploys new fund', async (wallet) => {
+            fund = await witness(wallet.deployFund(this.baseFund, {
                 portfolio: [
                     {
                         asset: this.network.asset.btc,
@@ -54,10 +47,12 @@ describe('Two Asset Fixed Allocation Fund', function () {
                         percentage: 0.05 // 85% in major units (no decimals)
                     }
                 ],
-            });
+            }))
             expect(fund).to.be.deployed
+        })
 
-            const initialization = await initializeFund(fund.address)
+        deployer('initializes new fund', async (wallet) => {
+            const initialization = await witness(wallet.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
 
             const state = await this.network.deployer.readAAStateVars(fund.address)
@@ -67,11 +62,10 @@ describe('Two Asset Fixed Allocation Fund', function () {
 
     describe('Issuing and Redeeming', () => {
 
-        let fund;
-        let sharesAsset;
+        let fund, sharesAsset
 
         before(async () => {
-            fund = await deployFund({
+            fund = await witness(this.network.deployer.deployFund(this.baseFund, {
                 portfolio: [
                     {
                         asset: this.network.asset.btc,
@@ -82,9 +76,9 @@ describe('Two Asset Fixed Allocation Fund', function () {
                         percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
                     }
                 ]
-            });
+            }))
             expect(fund).to.be.deployed
-            const initialization = await initializeFund(fund.address)
+            const initialization = await witness(this.network.deployer.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
 
             const state = await this.network.deployer.readAAStateVars(fund.address)
@@ -187,11 +181,10 @@ describe('Two Asset Fixed Allocation Fund', function () {
 
     describe('Assets should be fully redeemable', () => {
 
-        let fund;
-        let sharesAsset;
+        let fund, sharesAsset
 
         before(async () => {
-            fund = await deployFund({
+            fund = await witness(this.network.deployer.deployFund(this.baseFund, {
                 portfolio: [
                     {
                         asset: this.network.asset.btc,
@@ -202,9 +195,9 @@ describe('Two Asset Fixed Allocation Fund', function () {
                         percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
                     }
                 ]
-            });
+            }))
             expect(fund).to.be.deployed
-            const initialization = await initializeFund(fund.address)
+            const initialization = await witness(this.network.deployer.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
 
             const state = await this.network.deployer.readAAStateVars(fund.address)
