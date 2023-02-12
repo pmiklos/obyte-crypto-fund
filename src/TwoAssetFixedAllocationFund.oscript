@@ -49,8 +49,8 @@
 						$received_amount = trigger.outputs[$portfolio_spec.asset] OTHERWISE 0;
 						$expected_amount = round($total_received_amount * $portfolio_spec.percentage);
 
-						require($expected_amount > 0, "Not enough coins of " || $portfolio_spec.asset);
-						require($received_amount == $expected_amount, "Expected " || $expected_amount || " of " || $portfolio_spec.asset);
+						require($expected_amount > 0, "Not enough assets coins received");
+						require($received_amount == $expected_amount, "Incorrect ratio of assets coins received");
 					});
 				}`,
 				messages: [

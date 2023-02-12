@@ -3,6 +3,7 @@ const path = require('path')
 const INDEXFUND_AA_PATH = '../src/TwoAssetFixedAllocationFund.oscript'
 const BTC_DECIMALS = 1e8
 const ETH_DECIMALS = 1e6
+const BNB_DECIMALS = 1e6
 
 describe('Two Asset Fixed Allocation Fund', function () {
     this.timeout(120000)
@@ -19,12 +20,26 @@ describe('Two Asset Fixed Allocation Fund', function () {
             .agent({baseFund: path.join(__dirname, INDEXFUND_AA_PATH)})
             .asset({btc: {cap: 1_000 * BTC_DECIMALS}})
             .asset({eth: {cap: 1_000 * ETH_DECIMALS}})
-            .wallet({alice: {base: 1e6, btc: 500 * BTC_DECIMALS, eth: 500 * ETH_DECIMALS}})
+            .asset({bnb: {cap: 1_000 * BNB_DECIMALS}})
+            .wallet({alice: {base: 1e6, btc: 500 * BTC_DECIMALS, eth: 500 * ETH_DECIMALS, bnb: 500 * BNB_DECIMALS}})
             .wallet({bob: {base: 1e6, btc: 500 * BTC_DECIMALS, eth: 500 * ETH_DECIMALS}})
             .run()
 
         expect(this.network.agent.baseFund).to.be.validAddress
         this.baseFund = this.network.agent.baseFund
+
+        this.bitcoinEthereumPortfolio = {
+            portfolio: [
+                {
+                    asset: this.network.asset.btc,
+                    percentage: 21_000_000 * BTC_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                },
+                {
+                    asset: this.network.asset.eth,
+                    percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
+                }
+            ]
+        }
     })
 
     after(async () => {
@@ -36,18 +51,7 @@ describe('Two Asset Fixed Allocation Fund', function () {
         let fund
 
         deployer('deploys new fund', async (wallet) => {
-            fund = await witness(wallet.deployFund(this.baseFund, {
-                portfolio: [
-                    {
-                        asset: this.network.asset.btc,
-                        percentage: 0.95 // 15% in major units (no decimals)
-                    },
-                    {
-                        asset: this.network.asset.eth,
-                        percentage: 0.05 // 85% in major units (no decimals)
-                    }
-                ],
-            }))
+            fund = await witness(wallet.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
             expect(fund).to.be.deployed
         })
 
@@ -65,18 +69,7 @@ describe('Two Asset Fixed Allocation Fund', function () {
         let fund, sharesAsset
 
         before(async () => {
-            fund = await witness(this.network.deployer.deployFund(this.baseFund, {
-                portfolio: [
-                    {
-                        asset: this.network.asset.btc,
-                        percentage: 21_000_000 * BTC_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
-                    },
-                    {
-                        asset: this.network.asset.eth,
-                        percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
-                    }
-                ]
-            }))
+            fund = await witness(this.network.deployer.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
             expect(fund).to.be.deployed
             const initialization = await witness(this.network.deployer.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
@@ -184,18 +177,7 @@ describe('Two Asset Fixed Allocation Fund', function () {
         let fund, sharesAsset
 
         before(async () => {
-            fund = await witness(this.network.deployer.deployFund(this.baseFund, {
-                portfolio: [
-                    {
-                        asset: this.network.asset.btc,
-                        percentage: 21_000_000 * BTC_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
-                    },
-                    {
-                        asset: this.network.asset.eth,
-                        percentage: 119_000_000 * ETH_DECIMALS / (21_000_000 * BTC_DECIMALS + 119_000_000 * ETH_DECIMALS)
-                    }
-                ]
-            }))
+            fund = await witness(this.network.deployer.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
             expect(fund).to.be.deployed
             const initialization = await witness(this.network.deployer.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
@@ -261,6 +243,52 @@ describe('Two Asset Fixed Allocation Fund', function () {
             const balance = await wallet.getBalance()
             expect(balance[this.network.asset.btc].pending).to.equal(1)
             expect(balance[this.network.asset.eth].pending).to.equal(1)
+        })
+    })
+
+    describe('Assets should be added in fixed ratio', () => {
+
+        let fund
+
+        before(async () => {
+            fund = await witness(this.network.deployer.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
+            expect(fund).to.be.deployed
+            const initialization = await witness(this.network.deployer.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.successful
+        })
+
+        alice('pays in the wrong ratio', async (wallet) => {
+            const issuance = await wallet.issue({
+                address: fund.address,
+                outputs: {
+                    [this.network.asset.btc]: 14 * BTC_DECIMALS,
+                    [this.network.asset.eth]: 85 * ETH_DECIMALS
+                }
+            })
+            expect(issuance.error).to.be.null
+            expect(await responseTo(issuance)).to.be.bounced('Incorrect ratio of assets coins received')
+        })
+
+        alice('pays in wrong assets', async (wallet) => {
+            const issuance = await wallet.issue({
+                address: fund.address,
+                outputs: {
+                    [this.network.asset.bnb]: 100
+                }
+            })
+            expect(issuance.error).to.be.null
+            expect(await responseTo(issuance)).to.be.bounced('No portfolio assets received')
+        })
+
+        alice('redeems with wrong token', async (wallet) => {
+            const redemption = await wallet.redeem({
+                address: fund.address,
+                asset: this.network.asset.bnb,
+                amount: 1
+            })
+
+            expect(redemption.error).to.be.null
+            expect(await responseTo(redemption)).to.be.bounced('No shares returned')
         })
     })
 })
