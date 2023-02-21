@@ -1,11 +1,12 @@
 ![build status](https://github.com/pmiklos/obyte-crypto-fund/actions/workflows/build.yml/badge.svg)
 # Decentralized Cryptocurrency Fund
 
-The Obyte Autonomous Agent Fund is a collection of agents that manage portfolios of assets on the Obyte distributed ledger.
+The Decentralized Crypto Fund is a collection of [Obyte Autonomous Agents](https://obyte.org/platform/autonomous-agents) that manage portfolios of assets on the Obyte distributed ledger.
 These funds are able to incorporate assets from other chains, thanks to the [Counterstake](https://counterstake.org) cross-chain bridge,
 making them truly cross-chain decentralized cryptocurrency funds.
 
-These autonomous agents are abstract and must be deployed with custom parameters to track various baskets of assets, such as BTC and ETH or MATIC and BNB.
+These autonomous agents are abstract templates and so users are not supposed to interact with them directly. The community
+need to deploy individually configured instances to track various baskets of assets, such as BTC and ETH or MATIC and BNB.
 The funds work similarly, anyone can purchase shares in the fund by contributing one or more of the managed assets.
 The number of shares issued is proportional to the value of the assets contributed and the assets held in the fund.
 
@@ -14,6 +15,9 @@ Shareholders have the option to redeem their shares for the underlying assets in
 
 It is important to note that the fund is managed by the community as a whole and does not have a specific fund manager.
 Members of the community have the ability to add and remove assets from the fund at their discretion.
+
+See also:
+* [obyte-crypto-fund-ui](https://github.com/pmiklos/obyte-crypto-fund-ui) - a user interface for Decentralized Cryptocurrency Fund
 
 ## Testing
 
