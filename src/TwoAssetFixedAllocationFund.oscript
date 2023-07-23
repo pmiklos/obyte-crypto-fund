@@ -10,6 +10,14 @@
 		cases: [
 			{
 				if: "{ !$asset }",
+				init: `{
+					require(params.portfolio, "No portfolio specified");
+					require(params.portfolio.length == $PORTFOLIO_SIZE, "Invalid portfolio size");
+					require(params.portfolio[0].asset != params.portfolio[1].asset, "Portfolio assets must be different");
+					require(params.portfolio[0].percentage > 0, "Portfolio percentage must be positive");
+					require(params.portfolio[1].percentage > 0, "Portfolio percentage must be positive");
+					require(params.portfolio[0].percentage + params.portfolio[1].percentage == 1, "Portfolio percentages must add up to 1");
+				}`,
 				messages: [
 					{
 						app: "asset",

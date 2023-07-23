@@ -48,19 +48,84 @@ describe('Two Asset Fixed Allocation Fund', function () {
 
     describe('Initialization', () => {
 
-        let fund
-
-        deployer('deploys new fund', async (wallet) => {
-            fund = await witness(wallet.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
+        deployer('initializes fund', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, this.bitcoinEthereumPortfolio))
             expect(fund).to.be.deployed
-        })
 
-        deployer('initializes new fund', async (wallet) => {
             const initialization = await witness(wallet.initializeFund(fund.address))
             expect(await responseTo(initialization)).to.be.successful
 
             const state = await this.network.deployer.readAAStateVars(fund.address)
             expect(state.vars).to.have.a.property('asset')
+        })
+
+        deployer('fails to initialize, no portfolio is specified', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, {}))
+            expect(fund).to.be.deployed
+
+            const initialization = await witness(wallet.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.bounced('No portfolio specified')
+        })
+
+        deployer('fails to initialize, invalid portfolio size', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, {
+                portfolio: [{
+                    asset: this.network.asset.btc,
+                    percentage: 1.0
+                }]
+            }))
+            expect(fund).to.be.deployed
+
+            const initialization = await witness(wallet.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.bounced('Invalid portfolio size')
+        })
+
+        deployer('fails to initialize, negative percentage', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, {
+                portfolio: [{
+                    asset: this.network.asset.btc,
+                    percentage: -0.2
+                },{
+                    asset: this.network.asset.eth,
+                    percentage: 1.2
+                }]
+            }))
+            expect(fund).to.be.deployed
+
+            const initialization = await witness(wallet.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.bounced('Portfolio percentage must be positive')
+        })
+
+        deployer('fails to initialize, sum of percentages must be 1', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, {
+                portfolio: [{
+                    asset: this.network.asset.btc,
+                    percentage: 0.5
+                },{
+                    asset: this.network.asset.eth,
+                    percentage: 0.6
+                }]
+            }))
+            expect(fund).to.be.deployed
+
+            const initialization = await witness(wallet.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.bounced('Portfolio percentages must add up to 1')
+        })
+
+        deployer('fails to initialize, duplicate assets', async (wallet) => {
+            let fund = await witness(wallet.deployFund(this.baseFund, {
+                portfolio: [{
+                    asset: this.network.asset.btc,
+                    percentage: 0.8
+                },{
+                    asset: this.network.asset.btc,
+                    percentage: 0.2
+                }]
+            }))
+            expect(fund).to.be.deployed
+
+            const initialization = await witness(wallet.initializeFund(fund.address))
+            expect(await responseTo(initialization)).to.be.bounced('Portfolio assets must be different')
         })
     })
 
